@@ -54,7 +54,7 @@ public class IdleAlertPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged gameStateChanged) {
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN) {
-			log.info("Logged in!");
+//			log.info("Logged in!");
 			resetIdleCounters(); // Reset counters on login
 		}
 	}
@@ -86,7 +86,7 @@ public class IdleAlertPlugin extends Plugin
 
 		// Check if we have a consistent sequence of -1 animations after a non-idle state
 		if (isConsecutiveIdleAnimation()) {
-			log.info("Idle Animation Alert Triggered");
+//			log.info("Idle Animation Alert Triggered");
 			notifier.notify("You are idle!");
 		}
 	}
@@ -111,7 +111,7 @@ public class IdleAlertPlugin extends Plugin
 
 			// Only trigger after consistent idle state
 			if (idleMovementCounter >= IDLE_THRESHOLD) {
-				log.info("Idle Movement Alert Triggered");
+//				log.info("Idle Movement Alert Triggered");
 				notifier.notify("You are idle (no movement detected)!");
 				idleMovementCounter = 0; // Prevent repeated notifications
 			}
@@ -135,7 +135,7 @@ public class IdleAlertPlugin extends Plugin
 
 		// Trigger notification if total HP is at or below the threshold
 		if (totalHP > 0 && totalHP <= threshold) {
-			log.info("Low HP Alert Triggered");
+//			log.info("Low HP Alert Triggered");
 			notifier.notify(
 					"Warning! Low Hitpoints: " + currentHP + "eat up now!"
 

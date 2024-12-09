@@ -15,10 +15,12 @@ import net.runelite.client.util.ColorUtil;
 import net.runelite.client.Notifier;
 
 import java.awt.*;
+import java.util.LinkedList;
+import java.util.Queue;
 
 @Slf4j
 @PluginDescriptor(
-		name = "Idle and low hp alerts"
+		name = "Idle Alerts"
 )
 public class IdleAlertPlugin extends Plugin
 {
@@ -31,11 +33,12 @@ public class IdleAlertPlugin extends Plugin
 	@Inject
 	private Notifier notifier;
 
-	private int lastAnimation = -1;
+	// Use a queue to track recent animation states
+	private Queue<Integer> animationStates = new LinkedList<>();
 	private WorldPoint lastLocation = null;
-	private int idleAnimationCounter = 0;
 	private int idleMovementCounter = 0;
 	private static final int IDLE_THRESHOLD = 4; // Number of ticks to consider idle
+	private static final int ANIMATION_STATE_QUEUE_SIZE = 5; // Track last 5 animation states
 
 	@Override
 	protected void startUp() throws Exception {
@@ -44,8 +47,8 @@ public class IdleAlertPlugin extends Plugin
 	}
 
 	private void resetIdleCounters() {
-		idleAnimationCounter = 0;
 		idleMovementCounter = 0;
+		animationStates.clear();
 	}
 
 	@Subscribe
@@ -75,22 +78,24 @@ public class IdleAlertPlugin extends Plugin
 
 		int currentAnimation = player.getAnimation();
 
-		// Consider an idle state only after consistent -1 animations and only if previous animation was not -1
-		if (currentAnimation == -1 ) {
-			idleAnimationCounter++;
-
-			// Only trigger after consistent idle state
-			if (idleAnimationCounter >= IDLE_THRESHOLD) {
-				log.info("Idle Animation Alert Triggered");
-				notifier.notify("You are idle (animation stopped)!");
-				idleAnimationCounter = 0; // Prevent repeated notifications
-			}
-		} else {
-			// Reset counter if there's an active animation
-			idleAnimationCounter = 0;
+		// Maintain a queue of last few animation states
+		animationStates.offer(currentAnimation);
+		if (animationStates.size() > ANIMATION_STATE_QUEUE_SIZE) {
+			animationStates.poll();
 		}
 
-		lastAnimation = currentAnimation;
+		// Check if we have a consistent sequence of -1 animations after a non-idle state
+		if (isConsecutiveIdleAnimation()) {
+			log.info("Idle Animation Alert Triggered");
+			notifier.notify("You are idle!");
+		}
+	}
+
+	private boolean isConsecutiveIdleAnimation() {
+		// Check if first item is not -1, and all subsequent items are -1
+		return animationStates.size() >= ANIMATION_STATE_QUEUE_SIZE &&
+				animationStates.stream().findFirst().orElse(-1) != -1 &&
+				animationStates.stream().skip(1).allMatch(anim -> anim == -1);
 	}
 
 	private void checkIdleMovement(Player player) {
@@ -101,7 +106,7 @@ public class IdleAlertPlugin extends Plugin
 		WorldPoint currentLocation = player.getWorldLocation();
 
 		// Check if player is at the exact same location
-		if (lastLocation != null && lastLocation.equals(currentLocation)) {
+		if (lastLocation != null) {
 			idleMovementCounter++;
 
 			// Only trigger after consistent idle state
@@ -124,16 +129,20 @@ public class IdleAlertPlugin extends Plugin
 		}
 
 		int currentHP = client.getBoostedSkillLevel(Skill.HITPOINTS);
+		int absorptionHP = client.getVarbitValue(Varbits.NMZ_ABSORPTION); // NMZ absorption value
+		int totalHP = currentHP + absorptionHP; // Combine regular and absorption HP
 		int threshold = config.getHitpointsThreshold();
 
-		if (currentHP > 0 && currentHP <= threshold) {
+		// Trigger notification if total HP is at or below the threshold
+		if (totalHP > 0 && totalHP <= threshold) {
 			log.info("Low HP Alert Triggered");
-			notifier.notify(ColorUtil.wrapWithColorTag(
-					"Warning! Low Hitpoints: " + currentHP,
-					Color.RED
-			));
+			notifier.notify(
+					"Warning! Low Hitpoints: " + currentHP + "eat up now!"
+
+			);
 		}
 	}
+
 
 	@Provides
 	IdleAlertConfig provideConfig(ConfigManager configManager)

@@ -2,9 +2,10 @@ package com.idlealert;
 
 import net.runelite.client.config.*;
 
-@ConfigGroup("example")
+@ConfigGroup("idlealert")
 public interface IdleAlertConfig extends Config
 {
+
 	@ConfigItem(
 			keyName = "animationidle",
 			name = "Idle Animation Alert",
@@ -24,7 +25,7 @@ public interface IdleAlertConfig extends Config
 	)
 	default Notification movementIdle()
 	{
-		return Notification.OFF;
+		return Notification.ON;
 	}
 
 	@ConfigItem(
@@ -35,7 +36,7 @@ public interface IdleAlertConfig extends Config
 	)
 	default Notification getHitpointsNotification()
 	{
-		return Notification.OFF;
+		return Notification.ON;
 	}
 
 	@ConfigItem(
@@ -47,6 +48,18 @@ public interface IdleAlertConfig extends Config
 	@Range(min = 1)
 	default int getHitpointsThreshold()
 	{
-		return 1;
+		return 15;
 	}
+
+//	@ConfigItem(
+//			keyName = "idleDetectionThreshold",
+//			name = "Idle Detection Sensitivity",
+//			description = "Number of consecutive game ticks to wait before triggering an idle alert",
+//			position = 4
+//	)
+//	@Range(min = 3, max = 15)
+//	default int getIdleDetectionThreshold()
+//	{
+//		return 5;
+//	}
 }
